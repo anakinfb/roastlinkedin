@@ -37,24 +37,38 @@ function App() {
         throw new Error('Failed to fetch audit data');
       }
 
-      const data = await response.json();
+      const rawData = await response.json();
+      console.log('n8n Response:', rawData);
+
+      // Handle cases where data might be nested in an 'output' property or stringified
+      let data = rawData;
+      if (rawData.output && typeof rawData.output === 'string') {
+        try {
+          data = JSON.parse(rawData.output.replace(/```json\n?|```/g, ''));
+        } catch (e) {
+          console.error('Failed to parse nested JSON in output property');
+        }
+      } else if (rawData.output) {
+        data = rawData.output;
+      }
 
       // Delaying transition slightly to allow the animation to feel "complete"
       setTimeout(() => {
         setResult({
-          score: data.score || "4/10",
-          roast: data.roast || "Questo profilo è così generico che ho dimenticato di chi fosse mentre lo leggevo.",
-          redFlag: data.redFlag || "Uso eccessivo di 'pasionario' e 'visionario' senza una singola competenza reale.",
-          nickname: data.nickname || "L'Evangelista del Nulla",
+          score: data.score || data.output?.score || "4/10",
+          roast: data.roast || data.output?.roast || "Profilo troppo anonimo per un roast serio.",
+          redFlag: data.redFlag || data.output?.redFlag || "Nessuna informazione pubblica trovata.",
+          nickname: data.nickname || data.output?.nickname || "L'Invisibile",
           cardImage: data.cardImage || "#",
-          advice: data.advice || [
-            "Togli quella foto in bianco e nero fatta col cellulare.",
-            "Smettila di postare citazioni motivazionali di Steve Jobs.",
-            "Descrivi effettivamente COSA fai, non come lo senti."
-          ]
+          advice: Array.isArray(data.advice) ? data.advice :
+            (Array.isArray(data.output?.advice) ? data.output.advice : [
+              "Fatti un profilo meno blindato",
+              "Aggiungi qualche keyword reale",
+              "Smetti di nasconderti"
+            ])
         });
         setView('result');
-      }, 4500); // 4.5 seconds to sync with terminal animation logic
+      }, 4500);
 
     } catch (error) {
       console.error('Error during analysis:', error);
