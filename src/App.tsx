@@ -87,7 +87,7 @@ function App() {
 
       <main>
         {view === 'hero' && (
-          <Hero onAnalyze={handleAnalyze} isLoading={view === 'loading'} />
+          <Hero onAnalyze={handleAnalyze} isLoading={false} />
         )}
 
         {view === 'loading' && (
