@@ -6,7 +6,7 @@ import ResultDisplay from './components/ResultDisplay';
 import './index.css';
 
 // Webhook URL (placeholder as requested)
-const WEBHOOK_URL = 'https://n8n.tuoinstalla.com/webhook/roast';
+const WEBHOOK_URL = 'https://parentesikuadra.app.n8n.cloud/webhook-test/roast';
 
 interface ResultData {
   score: string;
