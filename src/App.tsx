@@ -61,7 +61,7 @@ function App() {
           redFlag: data.redFlag || data.output?.redFlag || "Nessuna informazione pubblica trovata.",
           nickname: data.nickname || data.output?.nickname || "L'Invisibile",
           cardImage: data.cardImage || "#",
-          sharePost: data.sharePost || data.output?.sharePost || "",
+          sharePost: data.sharePost || data.output?.sharePost || `Ho appena scoperto il mio Branding Score su Roast My LinkedIn! La verità fa male. Prova anche tu: ${window.location.origin}`,
           advice: Array.isArray(data.advice) ? data.advice :
             (Array.isArray(data.output?.advice) ? data.output.advice : [
               "Fatti un profilo meno blindato",

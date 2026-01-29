@@ -50,26 +50,24 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ data, onReset }) => {
                     </div>
 
                     <div className="actions">
-                        {data.sharePost && (
-                            <button
-                                className="btn-primary"
-                                onClick={() => {
-                                    const text = data.sharePost || "";
-                                    const dummy = document.createElement("textarea");
-                                    document.body.appendChild(dummy);
-                                    dummy.value = text;
-                                    dummy.select();
-                                    document.execCommand("copy");
-                                    document.body.removeChild(dummy);
+                        <button
+                            className="btn-primary"
+                            onClick={() => {
+                                const text = data.sharePost || "Ho appena scoperto la verità sul mio LinkedIn. La verità fa male. Scoprila anche tu!";
+                                const dummy = document.createElement("textarea");
+                                document.body.appendChild(dummy);
+                                dummy.value = text;
+                                dummy.select();
+                                document.execCommand("copy");
+                                document.body.removeChild(dummy);
 
-                                    alert("Testo del post copiato! Ora puoi incollarlo su LinkedIn.");
-                                    window.open("https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(window.location.href), "_blank");
-                                }}
-                            >
-                                <ChevronRight size={18} />
-                                Condividi la Vergogna su LinkedIn
-                            </button>
-                        )}
+                                alert("Testo del post copiato! Ora puoi incollarlo su LinkedIn.");
+                                window.open("https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(window.location.origin), "_blank");
+                            }}
+                        >
+                            <ChevronRight size={18} />
+                            Condividi la Vergogna su LinkedIn
+                        </button>
                         <a
                             href={data.cardImage}
                             target="_blank"
