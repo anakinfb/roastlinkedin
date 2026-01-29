@@ -1,0 +1,194 @@
+{
+  "name": "[FB] roastlinkedin",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "roast",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "GET, POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, Authorization"
+              }
+            ]
+          }
+        }
+      },
+      "id": "a3791d4e-a0e1-477b-b84c-08a6f4229efe",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        3776,
+        1088
+      ],
+      "webhookId": "roast-webhook"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analizza questo profilo LinkedIn: {{ $json[\"body\"][\"linkedinUrl\"] }}. \n\nUsa i tuoi strumenti (DuckDuckGo) per cercare il nome della persona o l'headline associata a questo URL. Poi genera un roast cattivo, divertente e spietato in JSON in lingua ITALIANA.",
+        "options": {
+          "systemMessage": "=Sei un recruiter cinico e sarcastico. \n\nTUO COMPITO:\n1. Usa lo strumento DuckDuckGo per cercare l'URL o il nome della persona per trovare informazioni pubbliche (headlines, post recenti, bio).\n2. Se non trovi nulla di specifico, prova a dedurre informazioni dal nome presente nell'URL.\n3. Genera un roast in JSON.\n\nJSON STRUCTURE:\n{\n  \"score\": \"Voto da 1 a 10\",\n  \"roast\": \"Testo del roast\",\n  \"redFlag\": \"Red flag principale\",\n  \"nickname\": \"Soprannome offensivo\",\n  \"advice\": [\"3 consigli sarcastici\"]\n}\n\nRispondi solo con il JSON, nient'altro testo."
+        }
+      },
+      "id": "d6b07923-5995-4e70-863f-f96f603622f7",
+      "name": "AI Roast Hunter",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        4000,
+        1088
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4.1-mini",
+        "options": {
+          "temperature": 0.8
+        }
+      },
+      "id": "74b6d051-5c76-49b0-80cf-93c410fb4031",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        3984,
+        1296
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "vpHAMAvQ1ApMq2Ex",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  const rawOutput = items[0].json.output;\n  const cleanOutput = rawOutput.replace(/```json\\n?|```/g, '').trim();\n  const parsed = JSON.parse(cleanOutput);\n  return [{ json: parsed }];\n} catch (e) {\n  return [{\n    json: {\n      score: \"5/10\",\n      roast: \"L'AI ha avuto un glitch cercando di capire il tuo profilo.\",\n      redFlag: \"Errore di parsing dei dati.\",\n      nickname: \"Il Glitch Aziendale\",\n      advice: [\"Riprova\", \"URL non valido\", \"Sii meno criptico\"]\n    }\n  }];\n}"
+      },
+      "id": "9f5e9fad-f910-4b94-816c-9fb7a980761f",
+      "name": "Parse JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4288,
+        1088
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "6208cfc2-6289-49d9-a95a-e7e5cb2edb7d",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        4480,
+        1088
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        4320,
+        1296
+      ],
+      "id": "46232133-8789-41e8-b0ca-3e21eda28909",
+      "name": "SerpAPI",
+      "credentials": {
+        "serpApi": {
+          "id": "d20LsYwRBtVnJseZ",
+          "name": "SerpAPI account (CellPK)"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Roast Hunter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Roast Hunter": {
+      "main": [
+        [
+          {
+            "node": "Parse JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse JSON": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Roast Hunter",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Roast Hunter",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "31fb464e-05c1-48ca-aef9-d91f658ccc75",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "75472f632ef2eaaec3510a26bcc922f9c0ba9e4c3ddc31e6e01c3710a32dea43"
+  },
+  "id": "jPqTMM3VWu1I8XBL",
+  "tags": []
+}

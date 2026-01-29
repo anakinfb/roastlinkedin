@@ -8,6 +8,7 @@ interface ResultData {
     nickname?: string;
     cardImage?: string;
     advice: string[];
+    sharePost?: string;
 }
 
 interface ResultDisplayProps {
@@ -49,18 +50,35 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ data, onReset }) => {
                     </div>
 
                     <div className="actions">
+                        {data.sharePost && (
+                            <button
+                                className="btn-primary"
+                                onClick={() => {
+                                    const text = data.sharePost || "";
+                                    const dummy = document.createElement("textarea");
+                                    document.body.appendChild(dummy);
+                                    dummy.value = text;
+                                    dummy.select();
+                                    document.execCommand("copy");
+                                    document.body.removeChild(dummy);
+
+                                    alert("Testo del post copiato! Ora puoi incollarlo su LinkedIn.");
+                                    window.open("https://www.linkedin.com/sharing/share-offsite/?url=" + encodeURIComponent(window.location.href), "_blank");
+                                }}
+                            >
+                                <ChevronRight size={18} />
+                                Condividi la Vergogna su LinkedIn
+                            </button>
+                        )}
                         <a
                             href={data.cardImage}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="btn-primary"
+                            className="btn-outline"
                         >
                             <Download size={18} />
-                            Scarica la Tua Card della Vergogna
+                            Scarica la Card
                         </a>
-                        <button className="btn-outline">
-                            Ottieni il Report Dettagliato (15€)
-                        </button>
                     </div>
                 </div>
 

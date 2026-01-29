@@ -15,6 +15,7 @@ interface ResultData {
   nickname?: string;
   cardImage?: string;
   advice: string[];
+  sharePost?: string;
 }
 
 function App() {
@@ -60,6 +61,7 @@ function App() {
           redFlag: data.redFlag || data.output?.redFlag || "Nessuna informazione pubblica trovata.",
           nickname: data.nickname || data.output?.nickname || "L'Invisibile",
           cardImage: data.cardImage || "#",
+          sharePost: data.sharePost || data.output?.sharePost || "",
           advice: Array.isArray(data.advice) ? data.advice :
             (Array.isArray(data.output?.advice) ? data.output.advice : [
               "Fatti un profilo meno blindato",
