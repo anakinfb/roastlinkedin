@@ -1,5 +1,5 @@
 {
-    "name": "[FB] roastlinkedin (Cleaned & Auth)",
+    "name": "[FB] roastlinkedin (Fix Redirects)",
     "nodes": [
         {
             "parameters": {
@@ -30,29 +30,47 @@
             "type": "n8n-nodes-base.webhook",
             "typeVersion": 1,
             "position": [
-                3700,
+                3500,
                 1088
             ],
             "webhookId": "roast-webhook"
         },
         {
             "parameters": {
-                "url": "={{ $json[\"body\"][\"linkedinUrl\"] }}",
+                "jsCode": "const rawUrl = items[0].json.body.linkedinUrl;\n// Rimuove parametri di tracciamento (utm_..., etc) che causano redirect loop\nconst cleanUrl = rawUrl.split('?')[0].split('/?')[0];\nreturn [{ json: { ...items[0].json, cleanUrl } }];"
+            },
+            "id": "url-sanitizer-id",
+            "name": "URL Sanitizer",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                3680,
+                1088
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{ $json.cleanUrl }}",
                 "sendHeaders": true,
                 "headerParameters": {
                     "parameters": [
                         {
                             "name": "Cookie",
-                            "value": "li_at=AQEDAWPzIDYF5ZjPAAABnAvE39MAAAGcL9Fj000Afyv5ilQ8hspCU3dz27YuCbY5OxUHnxLs46LlSnKghBtTq1w_nqqG8wm3UCQNDCaGB_Bk4Fn9ssdRVNfEtvbyx7_cQY_KYzWjFpvk4Uzvt9IUAUaB"
+                            "value": "li_at=INSERISCI_QUI_IL_TUO_COOKIE; JSESSIONID=\"ajax:1234567890123456789\""
                         },
                         {
                             "name": "User-Agent",
                             "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                        },
+                        {
+                            "name": "Accept",
+                            "value": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8"
                         }
                     ]
                 },
                 "options": {
-                    "responseFormat": "string"
+                    "responseFormat": "string",
+                    "followRedirect": false
                 }
             },
             "id": "scraper-node-id",
@@ -66,7 +84,7 @@
         },
         {
             "parameters": {
-                "jsCode": "const html = items[0].json.data;\nif (!html) return [{ json: { cleanedText: \"No content found\" } }];\n\n// Rimuove tag inutili e converte in testo\nlet text = html\n  .replace(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gmi, \"\")\n  .replace(/<style\\b[^>]*>([\\s\\S]*?)<\\/style>/gmi, \"\")\n  .replace(/<svg\\b[^>]*>([\\s\\S]*?)<\\/svg>/gmi, \"\")\n  .replace(/<[^>]+>/g, \" \")\n  .replace(/\\s+/g, \" \")\n  .trim();\n\n// Limita a 15.000 caratteri per stare sotto i limiti TPM di OpenAI\ntext = text.substring(0, 15000);\n\nreturn [{ json: { cleanedText: text } }];"
+                "jsCode": "const html = items[0].json.data;\nif (!html) return [{ json: { cleanedText: \"No content found\" } }];\n\n// Rimuove tag inutili e converte in testo\nlet text = html\n  .replace(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gmi, \"\")\n  .replace(/<style\\b[^>]*>([\\s\\S]*?)<\\/style>/gmi, \"\")\n  .replace(/<svg\\b[^>]*>([\\s\\S]*?)<\\/svg>/gmi, \"\")\n  .replace(/<[^>]+>/g, \" \")\n  .replace(/\\s+/g, \" \")\n  .trim();\n\ntext = text.substring(0, 15000);\nreturn [{ json: { cleanedText: text } }];"
             },
             "id": "clean-html-id",
             "name": "Clean HTML",
@@ -80,9 +98,9 @@
         {
             "parameters": {
                 "promptType": "define",
-                "text": "=Analizza questo profilo LinkedIn: {{ $node[\"Webhook\"].json[\"body\"][\"linkedinUrl\"] }}.\n\nEcco i dati salienti del profilo (testo pulito):\n{{ $json[\"cleanedText\"] }}\n\nUsa queste informazioni (ed eventualmente i tuoi strumenti come SerpAPI se i dati sono insufficienti) per generare un roast cattivo, divertente e spietato in JSON in lingua ITALIANA.\n\nSii ESTREMO nel voto: \n- Se il profilo è pieno di buzzword inutili (Synergy, Passionate, Visionary), dai un voto tra 1 e 3.\n- Se il profilo è stranamente decente, dai un 7-8 ma prendilo in giro per essere troppo 'perfettino'.\n- Evita di dare sempre 3. Vogliamo varietà!",
+                "text": "=Analizza questo profilo LinkedIn.\n\nEcco i dati del profilo (testo pulito):\n{{ $json[\"cleanedText\"] }}\n\nGenera un roast cattivo e divertente in JSON in ITALIANO.\nSii vario con i voti (1-10).",
                 "options": {
-                    "systemMessage": "=Sei un recruiter cinico, stanco della vita e assolutamente spietato. \n\nTUO COMPITO:\n1. Analizza i dati del profilo forniti.\n2. Genera un roast cattivo in JSON.\n3. Crea un testo per un post LinkedIn per condividere questo fallimento.\n\nJSON STRUCTURE:\n{\n  \"score\": \"Voto da 1 a 10 (Sii cattivo e vario)\",\n  \"roast\": \"Testo del roast\",\n  \"redFlag\": \"Red flag principale\",\n  \"nickname\": \"Soprannome offensivo\",\n  \"advice\": [\"3 consigli sarcastici\"],\n  \"sharePost\": \"Testo per un post LinkedIn (es: 'Ho appena scoperto di essere un [nickname] con un voto di [score] su Roast MY LinkedIn. La verità fa male. Prova anche tu: [LINK]')\"\n}\n\nRispondi solo con il JSON, nient'altro testo."
+                    "systemMessage": "=Sei un recruiter cinico e spietato. Rispondi solo in JSON.\n\nJSON STRUCTURE:\n{\n  \"score\": \"Voto 1-10\",\n  \"roast\": \"Testo\",\n  \"redFlag\": \"Red flag\",\n  \"nickname\": \"Soprannome\",\n  \"advice\": [\"Consiglio 1\", \"Consiglio 2\", \"Consiglio 3\"],\n  \"sharePost\": \"Testo per post social\"\n}"
                 }
             },
             "id": "d6b07923-5995-4e70-863f-f96f603622f7",
@@ -97,9 +115,7 @@
         {
             "parameters": {
                 "model": "gpt-4.1-mini",
-                "options": {
-                    "temperature": 0.8
-                }
+                "options": {}
             },
             "id": "74b6d051-5c76-49b0-80cf-93c410fb4031",
             "name": "OpenAI Chat Model",
@@ -118,7 +134,7 @@
         },
         {
             "parameters": {
-                "jsCode": "try {\n  const rawOutput = items[0].json.output;\n  const cleanOutput = rawOutput.replace(/```json\\n?|```/g, '').trim();\n  const parsed = JSON.parse(cleanOutput);\n  return [{ json: parsed }];\n} catch (e) {\n  return [{\n    json: {\n      score: \"5/10\",\n      roast: \"L'AI ha avuto un glitch cercando di capire il tuo profilo.\",\n      redFlag: \"Errore di parsing dei dati.\",\n      nickname: \"Il Glitch Aziendale\",\n      advice: [\"Riprova\", \"URL non valido\", \"Sii meno criptico\"]\n    }\n  }];\n}"
+                "jsCode": "try {\n  const rawOutput = items[0].json.output;\n  const cleanOutput = rawOutput.replace(/```json\\n?|```/g, '').trim();\n  return [{ json: JSON.parse(cleanOutput) }];\n} catch (e) {\n  return [{ json: { score: \"5/10\", roast: \"Errore parsing\", advice: [] } }];\n}"
             },
             "id": "9f5e9fad-f910-4b94-816c-9fb7a980761f",
             "name": "Parse JSON",
@@ -167,6 +183,17 @@
     "pinData": {},
     "connections": {
         "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "URL Sanitizer",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "URL Sanitizer": {
             "main": [
                 [
                     {
@@ -248,11 +275,5 @@
     "settings": {
         "executionOrder": "v1"
     },
-    "versionId": "v3-optimized",
-    "meta": {
-        "templateCredsSetupCompleted": true,
-        "instanceId": "75472f632ef2eaaec3510a26bcc922f9c0ba9e4c3ddc31e6e01c3710a32dea43"
-    },
-    "id": "jPqTMM3VWu1I8XBL",
-    "tags": []
+    "id": "jPqTMM3VWu1I8XBL"
 }
