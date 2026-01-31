@@ -1,5 +1,5 @@
 {
-    "name": "[FB] roastlinkedin (Fix Redirects)",
+    "name": "[PRO] Roast LinkedIn - ScrapingDog Edition",
     "nodes": [
         {
             "parameters": {
@@ -25,104 +25,92 @@
                     }
                 }
             },
-            "id": "a3791d4e-a0e1-477b-b84c-08a6f4229efe",
+            "id": "webhook-id",
             "name": "Webhook",
             "type": "n8n-nodes-base.webhook",
             "typeVersion": 1,
             "position": [
-                3500,
-                1088
+                3400,
+                1100
             ],
             "webhookId": "roast-webhook"
         },
         {
             "parameters": {
-                "jsCode": "const rawUrl = items[0].json.body.linkedinUrl;\n// Rimuove parametri di tracciamento (utm_..., etc) che causano redirect loop\nconst cleanUrl = rawUrl.split('?')[0].split('/?')[0];\nreturn [{ json: { ...items[0].json, cleanUrl } }];"
+                "jsCode": "const rawUrl = items[0].json.body.linkedinUrl;\nconst cleanUrl = rawUrl.split('?')[0].split('/?')[0];\nreturn [{ json: { ...items[0].json, cleanUrl } }];"
             },
             "id": "url-sanitizer-id",
             "name": "URL Sanitizer",
             "type": "n8n-nodes-base.code",
             "typeVersion": 2,
             "position": [
-                3680,
-                1088
+                3600,
+                1100
             ]
         },
         {
             "parameters": {
-                "url": "={{ $json.cleanUrl }}",
-                "sendHeaders": true,
-                "headerParameters": {
+                "url": "=https://api.scrapingdog.com/linkedin",
+                "sendQueryParameters": true,
+                "queryParameters": {
                     "parameters": [
                         {
-                            "name": "Cookie",
-                            "value": "li_at=INSERISCI_QUI_IL_TUO_COOKIE; JSESSIONID=\"ajax:1234567890123456789\""
+                            "name": "api_key",
+                            "value": "METTI_QUI_TUA_API_KEY_SCRAPINGDOG"
                         },
                         {
-                            "name": "User-Agent",
-                            "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                            "name": "type",
+                            "value": "profile"
                         },
                         {
-                            "name": "Accept",
-                            "value": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8"
+                            "name": "url",
+                            "value": "={{ $json.cleanUrl }}"
                         }
                     ]
                 },
                 "options": {
-                    "responseFormat": "string",
-                    "followRedirect": false
+                    "responseFormat": "json"
                 }
             },
-            "id": "scraper-node-id",
-            "name": "LinkedIn Scraper",
+            "id": "scrapingdog-id",
+            "name": "ScrapingDog Pro",
             "type": "n8n-nodes-base.httpRequest",
             "typeVersion": 4.1,
             "position": [
-                3880,
-                1088
-            ]
-        },
-        {
-            "parameters": {
-                "jsCode": "const html = items[0].json.data;\nif (!html) return [{ json: { cleanedText: \"No content found\" } }];\n\n// Rimuove tag inutili e converte in testo\nlet text = html\n  .replace(/<script\\b[^>]*>([\\s\\S]*?)<\\/script>/gmi, \"\")\n  .replace(/<style\\b[^>]*>([\\s\\S]*?)<\\/style>/gmi, \"\")\n  .replace(/<svg\\b[^>]*>([\\s\\S]*?)<\\/svg>/gmi, \"\")\n  .replace(/<[^>]+>/g, \" \")\n  .replace(/\\s+/g, \" \")\n  .trim();\n\ntext = text.substring(0, 15000);\nreturn [{ json: { cleanedText: text } }];"
-            },
-            "id": "clean-html-id",
-            "name": "Clean HTML",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                4060,
-                1088
+                3800,
+                1100
             ]
         },
         {
             "parameters": {
                 "promptType": "define",
-                "text": "=Analizza questo profilo LinkedIn.\n\nEcco i dati del profilo (testo pulito):\n{{ $json[\"cleanedText\"] }}\n\nGenera un roast cattivo e divertente in JSON in ITALIANO.\nSii vario con i voti (1-10).",
+                "text": "=Analizza questo profilo LinkedIn fornito in formato JSON da ScrapingDog:\n\n{{ JSON.stringify($json) }}\n\nTUO COMPITO:\nGenera un roast cattivo, spietato e divertente in lingua ITALIANA.\n\nSii vario nei voti:\n- 1-3 se il profilo è pieno di buzzword, titoli pomposi o certificati inutili.\n- 4-6 se è mediocre e noioso.\n- 7-9 se è sorprendentemente buono, ma prendilo in giro per essere un 'leccapiedi dei recruiter'.\n\nRispondi SOLO in JSON.",
                 "options": {
-                    "systemMessage": "=Sei un recruiter cinico e spietato. Rispondi solo in JSON.\n\nJSON STRUCTURE:\n{\n  \"score\": \"Voto 1-10\",\n  \"roast\": \"Testo\",\n  \"redFlag\": \"Red flag\",\n  \"nickname\": \"Soprannome\",\n  \"advice\": [\"Consiglio 1\", \"Consiglio 2\", \"Consiglio 3\"],\n  \"sharePost\": \"Testo per post social\"\n}"
+                    "systemMessage": "=Sei un recruiter cinico, stanco della vita e assolutamente spietato. \n\nJSON STRUCTURE:\n{\n  \"score\": \"Voto da 1 a 10\",\n  \"roast\": \"Testo del roast\",\n  \"redFlag\": \"Red flag principale\",\n  \"nickname\": \"Soprannome offensivo\",\n  \"advice\": [\"3 consigli sarcastici\"],\n  \"sharePost\": \"Testo per un post LinkedIn (es: 'Ho appena scoperto di avere un Branding Score di [score] su Roast MY LinkedIn. La verità fa male. Prova anche tu: [LINK]')\"\n}"
                 }
             },
-            "id": "d6b07923-5995-4e70-863f-f96f603622f7",
+            "id": "ai-agent-id",
             "name": "AI Roast Hunter",
             "type": "@n8n/n8n-nodes-langchain.agent",
             "typeVersion": 1.6,
             "position": [
-                4240,
-                1088
+                4000,
+                1100
             ]
         },
         {
             "parameters": {
                 "model": "gpt-4.1-mini",
-                "options": {}
+                "options": {
+                    "temperature": 0.8
+                }
             },
-            "id": "74b6d051-5c76-49b0-80cf-93c410fb4031",
+            "id": "openai-id",
             "name": "OpenAI Chat Model",
             "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
             "typeVersion": 1,
             "position": [
-                4200,
+                3900,
                 1300
             ],
             "credentials": {
@@ -134,15 +122,15 @@
         },
         {
             "parameters": {
-                "jsCode": "try {\n  const rawOutput = items[0].json.output;\n  const cleanOutput = rawOutput.replace(/```json\\n?|```/g, '').trim();\n  return [{ json: JSON.parse(cleanOutput) }];\n} catch (e) {\n  return [{ json: { score: \"5/10\", roast: \"Errore parsing\", advice: [] } }];\n}"
+                "jsCode": "try {\n  const rawOutput = items[0].json.output;\n  const cleanOutput = rawOutput.replace(/```json\\n?|```/g, '').trim();\n  return [{ json: JSON.parse(cleanOutput) }];\n} catch (e) {\n  return [{ json: { score: \"5/10\", roast: \"Il tuo profilo è così brutto che pure l'AI è andata in crash.\", advice: [\"Formatta meglio\", \"Cancella l'account\"] } }];\n}"
             },
-            "id": "9f5e9fad-f910-4b94-816c-9fb7a980761f",
+            "id": "parse-json-id",
             "name": "Parse JSON",
             "type": "n8n-nodes-base.code",
             "typeVersion": 2,
             "position": [
-                4500,
-                1088
+                4200,
+                1100
             ]
         },
         {
@@ -151,36 +139,16 @@
                     "responseCode": 200
                 }
             },
-            "id": "6208cfc2-6289-49d9-a95a-e7e5cb2edb7d",
+            "id": "response-id",
             "name": "Webhook Response",
             "type": "n8n-nodes-base.respondToWebhook",
             "typeVersion": 1,
             "position": [
-                4700,
-                1088
-            ]
-        },
-        {
-            "parameters": {
-                "options": {}
-            },
-            "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
-            "typeVersion": 1,
-            "position": [
                 4400,
-                1300
-            ],
-            "id": "46232133-8789-41e8-b0ca-3e21eda28909",
-            "name": "SerpAPI",
-            "credentials": {
-                "serpApi": {
-                    "id": "d20LsYwRBtVnJseZ",
-                    "name": "SerpAPI account (CellPK)"
-                }
-            }
+                1100
+            ]
         }
     ],
-    "pinData": {},
     "connections": {
         "Webhook": {
             "main": [
@@ -197,25 +165,14 @@
             "main": [
                 [
                     {
-                        "node": "LinkedIn Scraper",
+                        "node": "ScrapingDog Pro",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "LinkedIn Scraper": {
-            "main": [
-                [
-                    {
-                        "node": "Clean HTML",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Clean HTML": {
+        "ScrapingDog Pro": {
             "main": [
                 [
                     {
@@ -258,22 +215,9 @@
                     }
                 ]
             ]
-        },
-        "SerpAPI": {
-            "ai_tool": [
-                [
-                    {
-                        "node": "AI Roast Hunter",
-                        "type": "ai_tool",
-                        "index": 0
-                    }
-                ]
-            ]
         }
     },
-    "active": true,
     "settings": {
         "executionOrder": "v1"
-    },
-    "id": "jPqTMM3VWu1I8XBL"
+    }
 }
